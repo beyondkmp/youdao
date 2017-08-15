@@ -9,9 +9,9 @@ import json
 import webbrowser
 from collections import deque
 from termcolor import colored
-from spider import YoudaoSpider
-from model import Word
-import config
+from .spider import YoudaoSpider
+from .model import Word
+from . import config
 
 
 def show_result(result):
@@ -20,33 +20,33 @@ def show_result(result):
     :param result: 与有道API返回的json 数据结构一致的dict
     """
     if 'stardict' in result:
-        print colored(u'StarDict:', 'blue')
-        print result['stardict']
+        print( colored(u'StarDict:', 'blue'))
+        print( result['stardict'])
         return
 
     if result['errorCode'] != 0:
-        print colored(YoudaoSpider.error_code[result['errorCode']], 'red')
+        print( colored(YoudaoSpider.error_code[result['errorCode']], 'red'))
     else:
-        print colored('[%s]' % result['query'], 'magenta')
+        print( colored('[%s]' % result['query'], 'magenta'))
         if 'basic' in result:
             if 'us-phonetic' in result['basic']:
-                print colored(u'美音:', 'blue'), colored('[%s]' % result['basic']['us-phonetic'], 'green'),
+                print( colored(u'美音:', 'blue'), colored('[%s]' % result['basic']['us-phonetic'], 'green'),)
             if 'uk-phonetic' in result['basic']:
-                print colored(u'英音:', 'blue'), colored('[%s]' % result['basic']['uk-phonetic'], 'green')
+                print( colored(u'英音:', 'blue'), colored('[%s]' % result['basic']['uk-phonetic'], 'green'))
             if 'phonetic' in result['basic']:
-                print colored(u'拼音:', 'blue'), colored('[%s]' % result['basic']['phonetic'], 'green')
+                print( colored(u'拼音:', 'blue'), colored('[%s]' % result['basic']['phonetic'], 'green'))
 
-            print colored(u'基本词典:', 'blue')
-            print colored('\t'+'\n\t'.join(result['basic']['explains']), 'yellow')
+            print( colored(u'基本词典:', 'blue'))
+            print( colored('\t'+'\n\t'.join(result['basic']['explains']), 'yellow'))
 
         if 'translation' in result:
-            print colored(u'有道翻译:', 'blue')
-            print colored('\t'+'\n\t'.join(result['translation']), 'cyan')
+            print( colored(u'有道翻译:', 'blue'))
+            print( colored('\t'+'\n\t'.join(result['translation']), 'cyan'))
 
         if 'web' in result:
-            print colored(u'网络释义:', 'blue')
+            print( colored(u'网络释义:', 'blue'))
             for item in result['web']:
-                print '\t' + colored(item['key'], 'cyan') + ': ' + '; '.join(item['value'])
+                print( '\t' + colored(item['key'], 'cyan') + ': ' + '; '.join(item['value']))
 
 
 def play(voice_file):
@@ -69,42 +69,12 @@ def query(keyword, use_db=True, use_api=False, play_voice=False, use_dict=True):
         result.update(json.loads(word.json_data))
         update_word[0] = False
     elif update_word[0]:
-        # 从starditc中查找
-        if use_dict and config.config.get('stardict'):
-            try:
-                from lib.cpystardict import Dictionary
-            except ImportError:
-                from lib.pystardict import Dictionary
-            colors = deque(['cyan', 'yellow', 'blue'])
-            stardict_base = config.config.get('stardict')
-            stardict_trans = []
-            for dic_dir in os.listdir(stardict_base):
-                dic_file = os.listdir(os.path.join(stardict_base, dic_dir))[0]
-                name, ext = os.path.splitext(dic_file)
-                name = name.split('.')[0]
-                dic = Dictionary(os.path.join(stardict_base, dic_dir, name))
-                try:
-                    dic_exp = dic[keyword.encode("utf-8")]
-                except KeyError:
-                    pass
-                else:
-                    dic_exp = unicode(dic_exp.decode('utf-8'))
-                    stardict_trans.append(colored(u"[{dic}]:{word}".format(dic=name, word=keyword), 'green'))
-                    color = colors.popleft()
-                    colors.append(color)
-                    stardict_trans.append(colored(dic_exp, color))
-                    stardict_trans.append(colored(u'========================', 'magenta'))
-            if stardict_trans:
-                result['stardict'] = u'\n'.join(stardict_trans)
-                result['errorCode'] = 0
-
-        # 从stardict中没有匹配单词
         if not result['errorCode'] == 0:
             spider = YoudaoSpider(keyword)
             try:
                 result.update(spider.get_result(use_api))
-            except requests.HTTPError, e:
-                print colored(u'网络错误: %s' % e.message, 'red')
+            except requests.HTTPError as e:
+                print( colored(u'网络错误: %s' % e.message, 'red'))
                 sys.exit()
 
         # 更新数据库
@@ -122,9 +92,9 @@ def query(keyword, use_db=True, use_api=False, play_voice=False, use_dict=True):
 
 
 def show_db_list():
-    print colored(u'保存在数据库中的单词及查询次数:', 'blue')
+    print( colored(u'保存在数据库中的单词及查询次数:', 'blue'))
     for word in Word.select():
-        print colored(word.keyword, 'cyan'), colored(str(word.count), 'green')
+        print( colored(word.keyword, 'cyan'), colored(str(word.count), 'green'))
 
 
 def del_word(keyword):
@@ -193,16 +163,16 @@ def main():
             play_voice = True
         elif opt[0] == '-s':
             if os.path.isdir(opt[1]):
-                print u'stardict 路径设置成功：', opt[1]
+                print( u'stardict 路径设置成功：', opt[1])
                 config.set_dict_path(opt[1])
             else:
-                print u'stardict 路径设置失败. 原因可能是路径"%s"不存在.' % opt[1]
+                print( u'stardict 路径设置失败. 原因可能是路径"%s"不存在.' % opt[1])
             sys.exit()
         elif opt[0] == '-y':
             use_dict = False
             use_db = False
 
-    keyword = unicode(' '.join(args), encoding=sys.getfilesystemencoding())
+    keyword = ' '.join(args)
 
     if not keyword:
         if play_voice:

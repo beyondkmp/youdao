@@ -2,7 +2,7 @@
 
 import os
 import errno
-import cPickle
+import _pickle as cPickle
 
 
 VERSION = '0.3.1'
@@ -21,7 +21,7 @@ config = {'version': '0'}
 def silent_remove(filename):
     try:
         os.remove(filename)
-    except OSError, e:
+    except OSError as e:
         if e.errno != errno.ENOENT:
             raise
 
